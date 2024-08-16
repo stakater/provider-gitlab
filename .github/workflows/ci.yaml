@@ -385,15 +385,12 @@ jobs:
       - name: Login to Upbound
         uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3
         with:
-          registry: xpkg.upbound.io
+          registry: xpkg.upbound.io/stakater
           username: ${{ secrets.UPBOUND_MARKETPLACE_PUSH_ROBOT_USR }}
           password: ${{ secrets.UPBOUND_MARKETPLACE_PUSH_ROBOT_PSW }}
 
       - name: Publish to Upbound
         run: |
-          curl -sL "https://cli.upbound.io" | sh
-          sudo mv up /usr/local/bin/
-          up login -u ${{ secrets.UPBOUND_MARKETPLACE_PUSH_ROBOT_USR }} -p ${{ secrets.UPBOUND_MARKETPLACE_PUSH_ROBOT_PSW }}
           make -j2 publish BRANCH_NAME=${GITHUB_REF##*/} REGISTRY_ORGS="xpkg.upbound.io/stakater" XPKG_REG_ORGS="xpkg.upbound.io/stakater" XPKG_REG_ORGS_NO_PROMOTE="xpkg.upbound.io/stakater"
           
       # - name: Publish Artifacts to S3, Marketplace, DockerHub
