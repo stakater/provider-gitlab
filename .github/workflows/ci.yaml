@@ -395,11 +395,8 @@ jobs:
           curl -sL "https://cli.upbound.io" | sh
           sudo mv up /usr/local/bin/
           up login -u ${{ secrets.UPBOUND_MARKETPLACE_PUSH_ROBOT_USR }} -p ${{ secrets.UPBOUND_MARKETPLACE_PUSH_ROBOT_PSW }}
-          make -j2 publish BRANCH_NAME=${GITHUB_REF##*/}
-
-      - name: Publish to Upbound
-        run: |
           make -j2 publish BRANCH_NAME=${GITHUB_REF##*/} REGISTRY_ORGS="xpkg.upbound.io/stakater" XPKG_REG_ORGS="xpkg.upbound.io/stakater" XPKG_REG_ORGS_NO_PROMOTE="xpkg.upbound.io/stakater"
+          
 
       # - name: Publish Artifacts to S3, Marketplace, DockerHub
       #   run: make -j2 publish BRANCH_NAME=${GITHUB_REF##*/}
