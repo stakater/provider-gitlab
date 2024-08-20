@@ -184,28 +184,27 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 
 	// mark for deletion
 	_, err := e.client.DeleteProject(meta.GetExternalName(cr), gitlab.WithContext(ctx))
-	if err != nil {
-		return errors.Wrap(err, errDeleteFailed)
-	}
 
 	// Determine if we need to permanently delete the project
-	permanentlyDelete := false
-	if cr.Spec.ForProvider.PermanentlyDelete != nil {
-		permanentlyDelete = *cr.Spec.ForProvider.PermanentlyDelete
+	var permanentlyRemove bool
+	if cr.Spec.ForProvider.PermanentlyRemove != nil {
+		permanentlyRemove = *cr.Spec.ForProvider.PermanentlyRemove
 	}
 
-	// Prepare custom request options with the permanently_remove flag
-	reqOpt := gitlab.RequestOptionFunc(func(req *retryablehttp.Request) error {
-		q := req.URL.Query()
-		if permanentlyDelete {
-			q.Set("permanently_remove", "true")
-			q.Set("full_path", cr.Status.AtProvider.PathWithNamespace)
-		}
-		req.URL.RawQuery = q.Encode()
-		return nil
-	})
+	if permanentlyRemove {
+		reqOpt := gitlab.RequestOptionFunc(func(req *retryablehttp.Request) error {
+			q := req.URL.Query()
+			if permanentlyRemove {
+				q.Set("permanently_remove", "true")
+				q.Set("full_path", cr.Status.AtProvider.PathWithNamespace)
+			}
+			req.URL.RawQuery = q.Encode()
+			return nil
+		})
 
-	_, err = e.client.DeleteProject(meta.GetExternalName(cr), gitlab.WithContext(ctx), reqOpt)
+		_, err = e.client.DeleteProject(meta.GetExternalName(cr), gitlab.WithContext(ctx), reqOpt)
+	}
+
 	return errors.Wrap(err, errDeleteFailed)
 }
 

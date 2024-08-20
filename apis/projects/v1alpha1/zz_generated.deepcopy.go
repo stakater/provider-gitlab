@@ -1720,8 +1720,8 @@ func (in *ProjectParameters) DeepCopyInto(out *ProjectParameters) {
 		*out = new(AccessControlValue)
 		**out = **in
 	}
-	if in.PermanentlyDelete != nil {
-		in, out := &in.PermanentlyDelete, &out.PermanentlyDelete
+	if in.PermanentlyRemove != nil {
+		in, out := &in.PermanentlyRemove, &out.PermanentlyRemove
 		*out = new(bool)
 		**out = **in
 	}

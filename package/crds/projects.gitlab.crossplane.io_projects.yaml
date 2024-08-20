@@ -317,9 +317,8 @@ spec:
                       Repository name for new project.
                       Generated based on name if not provided (generated as lowercase with dashes).
                     type: string
-                  permanentlyDelete:
-                    description: Enable immedidate deletion of a project if it is
-                      marked for deletion.
+                  permanentlyRemove:
+                    description: Enable immediate deletion of a project.
                     type: boolean
                   printingMergeRequestLinkEnabled:
                     description: Show link to create/view merge request when pushing

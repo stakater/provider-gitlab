@@ -407,9 +407,9 @@ type ProjectParameters struct {
 	// +optional
 	WikiAccessLevel *AccessControlValue `json:"wikiAccessLevel,omitempty"`
 
-	// Enable immedidate deletion of a project if it is marked for deletion.
+	// Enable immediate deletion of a project.
 	// +optional
-	PermanentlyDelete *bool `json:"permanentlyDelete,omitempty"`
+	PermanentlyRemove *bool `json:"permanentlyRemove,omitempty"`
 }
 
 // ProjectNamespace represents a project namespace.
