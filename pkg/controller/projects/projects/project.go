@@ -192,7 +192,7 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 	reqOpt := gitlab.RequestOptionFunc(func(req *retryablehttp.Request) error {
 		q := req.URL.Query()
 		if permanentlyDelete {
-			q.Set("permanently_delete", "true")
+			q.Set("permanently_remove", "true")
 		}
 		req.URL.RawQuery = q.Encode()
 		return nil
