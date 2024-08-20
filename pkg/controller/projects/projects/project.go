@@ -29,6 +29,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/pkg/errors"
 	"github.com/xanzy/go-gitlab"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -181,7 +182,28 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 		return errors.New(errNotProject)
 	}
 
-	_, err := e.client.DeleteProject(meta.GetExternalName(cr), gitlab.WithContext(ctx))
+	// Determine if we need to permanently delete the project
+	permanentlyDelete := false
+	if cr.Spec.ForProvider.PermanentlyDelete != nil {
+		permanentlyDelete = *cr.Spec.ForProvider.PermanentlyDelete
+	}
+
+	// Prepare custom request options with the permanently_delete flag
+	reqOpt := gitlab.RequestOptionFunc(func(req *retryablehttp.Request) error {
+		// Convert the retryablehttp.Request to a standard http.Request
+		standardReq := req.Request
+
+		// Add query parameters for permanent deletion
+		q := standardReq.URL.Query()
+		if permanentlyDelete {
+			q.Add("permanently_delete", "true")
+		}
+		standardReq.URL.RawQuery = q.Encode()
+
+		return nil
+	})
+
+	_, err := e.client.DeleteProject(meta.GetExternalName(cr), gitlab.WithContext(ctx), reqOpt)
 	return errors.Wrap(err, errDeleteFailed)
 }
 

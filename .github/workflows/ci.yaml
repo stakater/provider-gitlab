@@ -390,8 +390,8 @@ jobs:
       #     username: ${{ secrets.XPKG_ACCESS_ID }}
       #     password: ${{ secrets.XPKG_TOKEN }}
 
-      
-      - name: Login to Upbound
+
+      - name: Login & Push to Upbound
         run: |
           curl -sL "https://cli.upbound.io" | sh
           sudo mv up /usr/local/bin/
