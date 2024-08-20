@@ -182,13 +182,19 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 		return errors.New(errNotProject)
 	}
 
+	// mark for deletion
+	_, err := e.client.DeleteProject(meta.GetExternalName(cr), gitlab.WithContext(ctx))
+	if err != nil {
+		return errors.Wrap(err, errDeleteFailed)
+	}
+
 	// Determine if we need to permanently delete the project
 	permanentlyDelete := false
 	if cr.Spec.ForProvider.PermanentlyDelete != nil {
 		permanentlyDelete = *cr.Spec.ForProvider.PermanentlyDelete
 	}
 
-	// Prepare custom request options with the permanently_delete flag
+	// Prepare custom request options with the permanently_remove flag
 	reqOpt := gitlab.RequestOptionFunc(func(req *retryablehttp.Request) error {
 		q := req.URL.Query()
 		if permanentlyDelete {
@@ -198,7 +204,7 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 		return nil
 	})
 
-	_, err := e.client.DeleteProject(meta.GetExternalName(cr), gitlab.WithContext(ctx), reqOpt)
+	_, err = e.client.DeleteProject(meta.GetExternalName(cr), gitlab.WithContext(ctx), reqOpt)
 	return errors.Wrap(err, errDeleteFailed)
 }
 
