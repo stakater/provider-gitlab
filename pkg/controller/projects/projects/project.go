@@ -199,6 +199,7 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 		q := req.URL.Query()
 		if permanentlyDelete {
 			q.Set("permanently_remove", "true")
+			q.Set("full_path", cr.Status.AtProvider.PathWithNamespace)
 		}
 		req.URL.RawQuery = q.Encode()
 		return nil
