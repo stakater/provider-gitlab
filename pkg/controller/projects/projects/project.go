@@ -49,6 +49,9 @@ const (
 	errUpdateFailed     = "cannot update Gitlab project"
 	errDeleteFailed     = "cannot delete Gitlab project"
 	errGetFailed        = "cannot retrieve Gitlab project with"
+
+	permanentlyRemoveParamLiteral = "permanently_remove"
+	fullPathParmLiteral           = "full_path"
 )
 
 // SetupProject adds a controller that reconciles Projects.
@@ -182,27 +185,18 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 		return errors.New(errNotProject)
 	}
 
-	// mark for deletion
+	// Mark for deletion
 	_, err := e.client.DeleteProject(meta.GetExternalName(cr), gitlab.WithContext(ctx))
 
 	// Determine if we need to permanently delete the project
+	// GitLab API docs: https://docs.gitlab.com/ee/api/projects.html#delete-project
 	var permanentlyRemove bool
 	if cr.Spec.ForProvider.PermanentlyRemove != nil {
 		permanentlyRemove = *cr.Spec.ForProvider.PermanentlyRemove
 	}
 
 	if permanentlyRemove {
-		reqOpt := gitlab.RequestOptionFunc(func(req *retryablehttp.Request) error {
-			q := req.URL.Query()
-			if permanentlyRemove {
-				q.Set("permanently_remove", "true")
-				q.Set("full_path", cr.Status.AtProvider.PathWithNamespace)
-			}
-			req.URL.RawQuery = q.Encode()
-			return nil
-		})
-
-		_, err = e.client.DeleteProject(meta.GetExternalName(cr), gitlab.WithContext(ctx), reqOpt)
+		_, err = e.client.DeleteProject(meta.GetExternalName(cr), gitlab.WithContext(ctx), createDeleteProjectRequestOption(cr))
 	}
 
 	return errors.Wrap(err, errDeleteFailed)
@@ -445,4 +439,18 @@ func isProjectUpToDate(p *v1alpha1.ProjectParameters, g *gitlab.Project) bool { 
 		return false
 	}
 	return true
+}
+
+// createDeleteProjectRequestOption adds query params as supported by Delete Project API
+func createDeleteProjectRequestOption(cr *v1alpha1.Project) gitlab.RequestOptionFunc {
+	if cr != nil {
+		return gitlab.RequestOptionFunc(func(req *retryablehttp.Request) error {
+			q := req.URL.Query()
+			q.Set(permanentlyRemoveParamLiteral, "true")
+			q.Set(fullPathParmLiteral, cr.Status.AtProvider.PathWithNamespace)
+			req.URL.RawQuery = q.Encode()
+			return nil
+		})
+	}
+	return nil
 }
