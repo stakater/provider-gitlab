@@ -187,6 +187,9 @@ spec:
                   path:
                     description: The path of the group.
                     type: string
+                  permanentlyRemove:
+                    description: Enable immediate deletion of a group.
+                    type: boolean
                   projectCreationLevel:
                     description: |-
                       developers can create projects in the group.

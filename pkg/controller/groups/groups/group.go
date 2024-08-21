@@ -29,6 +29,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/google/go-cmp/cmp"
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/pkg/errors"
 	"github.com/xanzy/go-gitlab"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -54,6 +55,9 @@ const (
 	errMissingGroupID    = "missing group ID for group to share with"
 	errSWGMissingGroupID = "FOllowing SharedWithGroup is missing GroupID: %v"
 	errLateInitialize    = "Error during LateInitialization: "
+
+	permanentlyRemoveParamLiteral = "permanently_remove"
+	fullPathParmLiteral           = "full_path"
 )
 
 // SetupGroup adds a controller that reconciles Groups.
@@ -234,7 +238,20 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 		return errors.New(errNotGroup)
 	}
 
+	// Mark for deletion
 	_, err := e.client.DeleteGroup(meta.GetExternalName(cr), gitlab.WithContext(ctx))
+
+	// Determine if we need to permanently delete the group
+	// GitLab API docs: https://docs.gitlab.com/ee/api/groups.html#delete-group
+	var permanentlyRemove bool
+	if cr.Spec.ForProvider.PermanentlyRemove != nil {
+		permanentlyRemove = *cr.Spec.ForProvider.PermanentlyRemove
+	}
+
+	if permanentlyRemove {
+		_, err = e.client.DeleteGroup(meta.GetExternalName(cr), gitlab.WithContext(ctx), createDeleteGroupRequestOption(cr))
+	}
+
 	return errors.Wrap(err, errDeleteFailed)
 }
 
@@ -467,4 +484,18 @@ func notShared(groupID int, grp *gitlab.Group) bool {
 		}
 	}
 	return true
+}
+
+// createDeleteGroupRequestOption adds query params as supported by Delete Group API
+func createDeleteGroupRequestOption(cr *v1alpha1.Group) gitlab.RequestOptionFunc {
+	if cr != nil {
+		return gitlab.RequestOptionFunc(func(req *retryablehttp.Request) error {
+			q := req.URL.Query()
+			q.Set(permanentlyRemoveParamLiteral, "true")
+			q.Set(fullPathParmLiteral, *cr.Status.AtProvider.FullPath)
+			req.URL.RawQuery = q.Encode()
+			return nil
+		})
+	}
+	return nil
 }

@@ -152,6 +152,10 @@ type GroupParameters struct {
 	// SharedWithGroups create links for sharing a group with another group.
 	// +optional
 	SharedWithGroups []SharedWithGroups `json:"sharedWithGroups,omitempty"`
+
+	// Enable immediate deletion of a group.
+	// +optional
+	PermanentlyRemove *bool `json:"permanentlyRemove,omitempty"`
 }
 
 // AccessLevelValue represents a permission level within GitLab.
